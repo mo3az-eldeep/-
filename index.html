@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Love Animation</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: linear-gradient(to top right, #000010, #190033);
+      font-family: "Arial", sans-serif;
+    }
+    canvas {
+      display: block;
+    }
+    #startScreen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: transparent;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 10;
+    }
+    #startScreen input {
+      padding: 10px 20px;
+      font-size: 20px;
+      border: none;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      outline: none;
+    }
+    #startBtn {
+      background: #ff0055;
+      color: white;
+      padding: 10px 30px;
+      font-size: 20px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    #startBtn:hover {
+      background: #ff3366;
+    }
+    #madeBy {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      color: white;
+      font-size: 14px;
+      text-shadow: 0 0 5px #0ff;
+      z-index: 20;
+    }
+  </style>
+</head>
+<body>
+  <div id="startScreen">
+    <input type="text" id="username" placeholder="ادخل اسمك هنا ❤️" />
+    <button id="startBtn">Continue 😉</button>
+  </div>
+  <canvas id="canvas"></canvas>
+  <div id="madeBy">MADE BY ENG MO3AZ ELDEEP</div>
+  <audio id="bgMusic" src="https://media.vocaroo.com/mp3/12jQlk2PClze" preload="auto" loop></audio>
+  <script>
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+    let nameText = "";
+    let animationStarted = false;
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const startBtn = document.getElementById("startBtn");
+    const usernameInput = document.getElementById("username");
+    const startScreen = document.getElementById("startScreen");
+
+    // متغيرات القلب والنجوم والاسم
+    let centerX = canvas.width / 2;
+    let centerY = canvas.height / 2 - 60;
+    let heartSize = 260;
+    let hue = 0;
+    let dashOffset = 0;
+    let typedIndex = 0;
+    let scale = 0.2;
+    let growing = true;
+    let finishedGrowing = false;
+    let startLineDash = false;
+
+    // نجوم الخلفية
+    const stars = [];
+    for (let i = 0; i < 150; i++) {
+      stars.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        radius: Math.random() * 1.5 + 0.3,
+        speed: Math.random() * 0.3 + 0.1,
+        alpha: Math.random() * 0.5 + 0.3
+      });
+    }
+// رسم النجوم في شاشة البداية
+function drawStarsLoop() {
+  if (!animationStarted) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawStars();
+    requestAnimationFrame(drawStarsLoop);
+  }
+}
+drawStarsLoop();
+    function drawStars() {
+      ctx.save();
+      ctx.fillStyle = "white";
+      for (let star of stars) {
+        ctx.globalAlpha = star.alpha;
+        ctx.beginPath();
+        ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+        ctx.fill();
+        star.y += star.speed;
+        if (star.y > canvas.height) star.y = 0;
+      }
+      ctx.globalAlpha = 1;
+      ctx.restore();
+    }
+
+    function drawAnimatedHeart(size, dash = false) {
+      ctx.save();
+      if (dash) {
+        ctx.setLineDash([15, 10]);
+        ctx.lineDashOffset = -dashOffset;
+      } else {
+        ctx.setLineDash([]);
+      }
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY);
+      ctx.bezierCurveTo(centerX + size * 0.5, centerY - size * 0.5,
+                        centerX + size * 1.5, centerY + size * 0.3,
+                        centerX, centerY + size * 1.5);
+      ctx.bezierCurveTo(centerX - size * 1.5, centerY + size * 0.3,
+                        centerX - size * 0.5, centerY - size * 0.5,
+                        centerX, centerY);
+      ctx.closePath();
+      ctx.lineWidth = 14;
+      ctx.strokeStyle = `hsl(${hue}, 100%, 70%)`;
+      ctx.shadowColor = `hsl(${(hue+60)%360}, 100%, 70%)`;
+      ctx.shadowBlur = 40;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawTypedName(size) {
+      if (!nameText) return;
+      const nameToShow = nameText.slice(0, typedIndex);
+      ctx.save();
+      let fontSize = Math.max(40, Math.min(size / 4, 320 / (nameText.length + 1)));
+      ctx.font = `${fontSize}px Arial`;
+      ctx.fillStyle = "#fff";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.shadowColor = `hsl(${(hue*2)%360}, 100%, 70%)`;
+      ctx.shadowBlur = 30 + Math.sin(hue/20)*10;
+      ctx.fillText(nameToShow, centerX, centerY + size * 0.35);
+      ctx.restore();
+    }
+
+    function drawFrame() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      hue = (hue + 2) % 360;
+
+      drawStars();
+
+      if (!finishedGrowing) {
+        if (growing) {
+          scale += 0.015;
+          if (scale >= 1.15) growing = false;
+        } else {
+          scale -= 0.015;
+          if (scale <= 1) {
+            scale = 1;
+            finishedGrowing = true;
+            startLineDash = true;
+          }
+        }
+        drawAnimatedHeart(heartSize * scale, false);
+      } else {
+        SCALE =1 ;
+        dashOffset += 2;
+        drawAnimatedHeart(heartSize * scale, true);
+        drawTypedName(heartSize * scale);
+
+        if (typedIndex < nameText.length) {
+          if (startLineDash) {
+            typedIndex = 0;
+            startLineDash = false;
+          }
+          typedIndex += 0.12;
+        }
+      }
+
+      requestAnimationFrame(drawFrame);
+    }
+
+    startBtn.addEventListener("click", () => {
+      nameText = usernameInput.value.trim() || "MO3AZ";
+      startScreen.style.display = "none";
+      scale = 0.2;
+      growing = true;
+      finishedGrowing = false;
+      dashOffset = 0;
+      typedIndex = 0;
+      startLineDash = false;
+      animationStarted = true;
+    const music = document.getElementById("bgMusic");
+  if (music) {
+    music.play().catch((err) => {
+      console.log("لم يتم تشغيل الصوت تلقائيًا:", err);
+    });
+  }
+
+  drawFrame(); // ← تشغيل الأنيميشن
+});
+
+    window.addEventListener("resize", () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      centerX = canvas.width / 2;
+        centerY = canvas.height / 2 - 60;
+    });
+  </script>
+</body>
+</html>
